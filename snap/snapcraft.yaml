@@ -1,0 +1,83 @@
+name: openresty
+version: '1.11.2.5'
+summary: A thing
+description: Openresty does cloud things
+
+grade: stable
+confinement: strict
+
+apps:
+  openresty:
+    command: bin/openresty
+    plugs:
+      - network-bind
+      - network
+      - home
+      - removable-media
+
+parts:  
+  openresty:
+    plugin: autotools
+    source: https://openresty.org/download/openresty-1.11.2.5.tar.gz
+    install-via: prefix
+    # configure options here from https://getkong.org/install/source/
+    configflags:
+      - --with-pcre-jit
+      - --with-ipv6
+      - --with-http_realip_module
+      - --with-http_ssl_module
+      - --with-http_stub_status_module
+      - --with-http_v2_module
+    build-packages: 
+      - to armhf:
+        - "build-essential:armhf"
+        - "libpcre3-dev:armhf"
+        - "perl:armhf"
+        - "curl:armhf"
+        - "libssl-dev:armhf"
+      - to arm64:
+        - "build-essential:arm64"
+        - "libpcre3-dev:arm64"
+        - "perl:arm64"
+        - "curl:arm64"
+        - "libssl-dev:arm64"
+      - to amd64:
+        - "build-essential:amd64"
+        - "libpcre3-dev:amd64"
+        - "perl:amd64"
+        - "curl:amd64"
+        - "libssl-dev:amd64"
+    stage-packages:
+      - to armhf:
+        - "perl:armhf"
+        - "libssl:armhf"
+      - to arm64:
+        - "perl:arm64"
+        - "libssl:arm64"
+      - to amd64:
+        - "perl:amd64"
+        - "libssl:amd64"
+  lua:
+    source: https://www.lua.org/ftp/lua-5.1.5.tar.gz
+    source-type: tar
+    plugin: nil
+    build-packages:
+      - to armhf: 
+        - "libreadline-dev:armhf"
+        - "libncurses5-dev:armhf"
+      - to arm64: 
+        - "libreadline-dev:arm64"
+        - "libncurses5-dev:arm64"
+      - to amd64: 
+        - "libreadline-dev:amd64"
+        - "libncurses5-dev:amd64"
+      - to i386: 
+        - "libreadline-dev:i386"
+        - "libncurses5-dev:i386"
+    override-build: |
+      # patch the Makefile to use $SNAPCRAFT_STAGE for the INSTALL_TOP variable
+      # which unfortunately is not settable using an environment variable and thus needs 
+      # this manual patch
+      sed -i "s@INSTALL_TOP= /usr/local@INSTALL_TOP=$SNAPCRAFT_STAGE@" Makefile
+      make linux install DESTDIR=$SNAPCRAFT_PART_INSTALL
+
